@@ -38,7 +38,6 @@ class PinduoduoInboundEvent:
     timestamp: int | float | None = None
     content: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
-    raw_data: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
