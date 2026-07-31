@@ -5,6 +5,7 @@ from collections import deque
 from typing import Any
 
 from ..channels import SupportRuntime
+from ..runtime_status import RuntimeStatusRegistry
 from .models import PinduoduoAccount, PinduoduoConnectionStatus
 from .parser import event_to_inbound_message, parse_pinduoduo_event
 from .transport import PinduoduoTransport
@@ -38,10 +39,14 @@ class PinduoduoGateway:
         transport: PinduoduoTransport,
         runtime: SupportRuntime,
         max_concurrent_messages: int = 20,
+        runtime_status: RuntimeStatusRegistry | None = None,
+        runtime_key: str = "",
     ):
         self.account = account
         self.transport = transport
         self.runtime = runtime
+        self.runtime_status = runtime_status
+        self.runtime_key = runtime_key
         self.status = PinduoduoConnectionStatus("disconnected")
         self._semaphore = asyncio.Semaphore(max(1, max_concurrent_messages))
         self._tasks: set[asyncio.Task[Any]] = set()
@@ -60,6 +65,8 @@ class PinduoduoGateway:
                 inbound = event_to_inbound_message(event, self.account)
                 if inbound is None:
                     continue
+                if self.runtime_status and self.runtime_key:
+                    self.runtime_status.record_received(self.runtime_key)
                 task = asyncio.create_task(self._handle(inbound))
                 self._tasks.add(task)
                 task.add_done_callback(self._tasks.discard)
@@ -75,7 +82,12 @@ class PinduoduoGateway:
 
     async def _handle(self, inbound) -> None:
         async with self._semaphore:
-            await asyncio.to_thread(self.runtime.handle, inbound)
+            decision = await asyncio.to_thread(self.runtime.handle, inbound)
+            if self.runtime_status and self.runtime_key:
+                if decision.action in {"reply", "handoff"} and decision.reply_text:
+                    self.runtime_status.record_sent(self.runtime_key)
+                if decision.action == "handoff":
+                    self.runtime_status.record_handoff(self.runtime_key)
 
     async def _drain(self) -> None:
         tasks = list(self._tasks)

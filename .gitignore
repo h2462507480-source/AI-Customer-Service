@@ -7,3 +7,7 @@ build/
 *.egg-info/
 data/
 *.db
+logs/
+backups/
+release/
+*.spec.bak

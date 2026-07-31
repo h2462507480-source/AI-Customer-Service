@@ -1,24 +1,36 @@
 from __future__ import annotations
 
-import os
 import threading
 import tkinter as tk
-from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from .admin import AdminService
-from .db import create_database
+from .application_runtime import ApplicationRuntime
+from .client_status import ClientStatusCenter
 from .desktop_catalog import KnowledgeTab, ModelsTab, RulesTab, UnknownTab
 from .desktop_operations import ChannelsTab, ConversationsTab, HandoffsTab, OverviewTab, SettingsTab
+from .desktop_runtime import OperationsLogTab, StatusCenterTab
+from .operation_log import OperationLog
 from .runtime_status import RuntimeStatusRegistry
 
 
 class DesktopApp(tk.Tk):
-    def __init__(self, admin: AdminService, registry: RuntimeStatusRegistry | None = None):
+    def __init__(
+        self,
+        admin: AdminService,
+        registry: RuntimeStatusRegistry | None = None,
+        *,
+        runtime: ApplicationRuntime | None = None,
+        operation_log: OperationLog | None = None,
+        status_center: ClientStatusCenter | None = None,
+    ):
         super().__init__()
         self.admin = admin
         self.registry = registry or RuntimeStatusRegistry()
+        self.runtime = runtime
+        self.operation_log = operation_log or (runtime.operation_log if runtime else None)
+        self.status_center = status_center or (runtime.status_center if runtime else None)
         self.title("AI Customer Service 管理后台")
         self.geometry("1380x850")
         self.minsize(1120, 680)
@@ -37,15 +49,22 @@ class DesktopApp(tk.Tk):
         self.tabs = ttk.Notebook(self)
         self.tabs.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
         self.views = [
-            OverviewTab(self.tabs, self), ModelsTab(self.tabs, self), UnknownTab(self.tabs, self),
+            StatusCenterTab(self.tabs, self), OverviewTab(self.tabs, self),
+            ModelsTab(self.tabs, self), UnknownTab(self.tabs, self),
             KnowledgeTab(self.tabs, self), RulesTab(self.tabs, self), ConversationsTab(self.tabs, self),
-            HandoffsTab(self.tabs, self), SettingsTab(self.tabs, self), ChannelsTab(self.tabs, self),
+            HandoffsTab(self.tabs, self), OperationsLogTab(self.tabs, self),
+            SettingsTab(self.tabs, self), ChannelsTab(self.tabs, self),
         ]
-        titles = ["总览", "型号库", "未知型号", "知识库", "自动规则", "会话", "转人工", "店铺设置", "渠道账号"]
+        titles = [
+            "运行中心", "业务总览", "型号库", "未知型号", "知识库", "自动规则",
+            "会话", "转人工", "操作日志", "店铺设置", "渠道账号",
+        ]
         for view, title in zip(self.views, titles):
             self.tabs.add(view, text=title)
         self.refresh_shop_list()
         self.refresh_all()
+        self.protocol("WM_DELETE_WINDOW", self.close)
+        self.after(1000, self._poll_status)
 
     @property
     def shop_key(self) -> str:
@@ -88,11 +107,33 @@ class DesktopApp(tk.Tk):
             on_success(result)
         self.refresh_all()
 
+    def _poll_status(self) -> None:
+        if not self.winfo_exists():
+            return
+        try:
+            self.views[0].refresh()
+        finally:
+            self.after(1000, self._poll_status)
+
+    def close(self) -> None:
+        try:
+            if self.runtime:
+                self.runtime.stop()
+        finally:
+            self.destroy()
+
 
 def main() -> None:
-    db_path = Path(os.getenv("AI_STORE_DB", "data/ai-store-support.db"))
-    engine, sessions = create_database(db_path)
-    DesktopApp(AdminService(sessions, engine)).mainloop()
+    runtime = ApplicationRuntime()
+    runtime.start()
+    try:
+        DesktopApp(
+            runtime.admin,
+            runtime.registry,
+            runtime=runtime,
+        ).mainloop()
+    finally:
+        runtime.stop()
 
 
 if __name__ == "__main__":

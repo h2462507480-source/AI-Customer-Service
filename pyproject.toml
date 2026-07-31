@@ -1,6 +1,6 @@
 [project]
 name = "ai-store-support"
-version = "0.3.1"
+version = "0.4.0"
 description = "Deterministic AI-assisted customer support for e-commerce stores"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -11,11 +11,12 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0,<10.0"]
+build = ["pyinstaller>=6.0,<7.0"]
 
 [project.scripts]
 ai-store-support = "ai_store_support.cli:main"
 ai-store-support-desktop = "ai_store_support.desktop:main"
-ai-store-support-launcher = "ai_store_support.launcher:start_desktop"
+ai-store-support-launcher = "ai_store_support.launcher:main"
 
 [build-system]
 requires = ["hatchling"]
