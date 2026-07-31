@@ -72,7 +72,7 @@ class AdminCoreMixin:
                 return {
                     "models": int(scalar(select(func.count()).select_from(PhoneModelSupport).where(PhoneModelSupport.shop_key == shop_key)) or 0),
                     "supported_models": int(scalar(select(func.count()).select_from(PhoneModelSupport).where(PhoneModelSupport.shop_key == shop_key, PhoneModelSupport.supported.is_(True))) or 0),
-                    "unknown_pending": int(scalar(select(func.count()).select_from(UnknownPhoneModelQuery).wher(UnknownPhoneModelQuery.shop_key == shop_key, UnknownPhoneModelQuery.status == "pending")) or 0),
+                    "unknown_pending": int(scalar(select(func.count()).select_from(UnknownPhoneModelQuery).where(UnknownPhoneModelQuery.shop_key == shop_key, UnknownPhoneModelQuery.status == "pending")) or 0),
                     "unknown_queries": int(scalar(select(func.coalesce(func.sum(UnknownPhoneModelQuery.query_count), 0)).where(UnknownPhoneModelQuery.shop_key == shop_key)) or 0),
                     "knowledge_enabled": int(scalar(select(func.count()).select_from(KnowledgeEntry).where(KnowledgeEntry.shop_key == shop_key, KnowledgeEntry.enabled.is_(True))) or 0),
                     "conversations_ai": int(scalar(select(func.count()).select_from(Conversation).where(Conversation.shop_key == shop_key, Conversation.status == "ai")) or 0),
