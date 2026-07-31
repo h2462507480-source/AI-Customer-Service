@@ -1,10 +1,19 @@
-# Customer-Agent 适配层
+# 拼多多 Customer-Agent 适配层
 
-该目录用于逐步迁移拼多多登录、WebSocket消息收发、商品卡片和转人工能力。
+该目录将在下一阶段承载拼多多真实渠道能力：
 
-适配原则：
+- 登录与会话保持
+- WebSocket 消息接收
+- 文本及商品卡片发送
+- 真正执行转人工
+- 断线重连和账号状态
 
-- 保留底层渠道连接能力
-- 使用 `ai_store_support.PhoneModelService` 替代模糊文本型号查询
-- 型号查询处理器必须位于通用 AI 回复处理器之前
-- 未知型号不得由 AI 猜测
+适配器收到买家消息后，转换成 `InboundMessage` 并交给 `CustomerServiceOrchestrator`。适配器只执行决策结果，不负责判断型号、售后风险或知识答案。
+
+当前核心已经提供：
+
+- `ChannelAdapter.send_text`
+- `ChannelAdapter.transfer_to_human`
+- `SupportRuntime.handle`
+
+型号查询必须先于 AI；未知型号和售后高风险问题必须转人工，不得让 AI 猜测。
