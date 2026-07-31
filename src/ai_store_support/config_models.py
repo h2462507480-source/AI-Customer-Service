@@ -56,3 +56,23 @@ class RoutingRule(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+
+
+class ChannelAccount(Base):
+    """Non-secret channel account metadata used by the desktop manager."""
+
+    __tablename__ = "channel_account"
+    __table_args__ = (
+        UniqueConstraint("shop_key", "channel", "account_key", name="uix_channel_account"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    shop_key: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    channel: Mapped[str] = mapped_column(String(50), nullable=False, default="pinduoduo")
+    account_key: Mapped[str] = mapped_column(String(120), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    transport_name: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    settings_json: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
