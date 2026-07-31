@@ -1,0 +1,30 @@
+[project]
+name = "ai-store-support"
+version = "0.4.0"
+description = "Deterministic AI-assisted customer support for e-commerce stores"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "SQLAlchemy>=2.0,<3.0",
+  "openpyxl>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0,<10.0"]
+build = ["pyinstaller>=6.0,<7.0"]
+
+[project.scripts]
+ai-store-support = "ai_store_support.cli:main"
+ai-store-support-desktop = "ai_store_support.desktop:main"
+ai-store-support-launcher = "ai_store_support.launcher:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ai_store_support"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
