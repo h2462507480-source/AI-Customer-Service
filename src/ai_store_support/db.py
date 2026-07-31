@@ -7,6 +7,8 @@ from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from .models import Base
+from . import config_models as _config_models  # noqa: F401 - register metadata
+from . import conversation_models as _conversation_models  # noqa: F401 - register metadata
 
 
 def create_database(db_path: str | Path) -> tuple[Engine, Callable[[], Session]]:
